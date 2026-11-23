@@ -1,0 +1,1027 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Words · Заучивание</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        :root {
+            --bg: #0a0a14;
+            --card: rgba(255, 255, 255, 0.06);
+            --card-border: rgba(255, 255, 255, 0.1);
+            --text: #ffffff;
+            --text-dim: rgba(255, 255, 255, 0.6);
+            --accent: #a855f7;
+            --accent-2: #ec4899;
+            --accent-3: #3b82f6;
+            --success: #10b981;
+            --error: #ef4444;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg);
+            min-height: 100vh;
+            color: var(--text);
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Анимированный фон с blob-ами */
+        .bg-blobs {
+            position: fixed;
+            inset: 0;
+            overflow: hidden;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.5;
+            animation: float 20s infinite ease-in-out;
+        }
+
+        .blob-1 {
+            width: 400px; height: 400px;
+            background: var(--accent);
+            top: -100px; left: -100px;
+            animation-delay: 0s;
+        }
+
+        .blob-2 {
+            width: 350px; height: 350px;
+            background: var(--accent-2);
+            top: 50%; right: -100px;
+            animation-delay: -5s;
+        }
+
+        .blob-3 {
+            width: 300px; height: 300px;
+            background: var(--accent-3);
+            bottom: -100px; left: 30%;
+            animation-delay: -10s;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(50px, -50px) scale(1.1); }
+            66% { transform: translate(-30px, 30px) scale(0.9); }
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        /* Заголовок */
+        .header {
+            text-align: center;
+            padding: 20px 0 30px;
+            animation: fadeInDown 0.6s ease;
+        }
+
+        .logo {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 28px;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.5px;
+        }
+
+        .logo-dot {
+            width: 10px; height: 10px;
+            background: var(--accent-2);
+            border-radius: 50%;
+            box-shadow: 0 0 20px var(--accent-2);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(1.2); }
+        }
+
+        /* Glass-карточки */
+        .card {
+            background: var(--card);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--card-border);
+            border-radius: 24px;
+            padding: 24px;
+            margin-bottom: 16px;
+            animation: fadeInUp 0.5s ease;
+        }
+
+        /* Экраны с плавным переходом */
+        .screen {
+            display: none;
+            animation: slideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Статистика */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .stat {
+            background: var(--card);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 16px 8px;
+            text-align: center;
+            transition: transform 0.2s;
+        }
+
+        .stat:active {
+            transform: scale(0.95);
+        }
+
+        .stat-value {
+            font-size: 26px;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1;
+        }
+
+        .stat-label {
+            font-size: 10px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 6px;
+            font-weight: 600;
+        }
+
+        .stat.record {
+            background: linear-gradient(135deg, rgba(168, 85, 247, 0.2), rgba(236, 72, 153, 0.2));
+            border-color: rgba(236, 72, 153, 0.3);
+        }
+
+        /* Кнопки режимов */
+        .mode-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .mode-btn {
+            position: relative;
+            padding: 20px;
+            border: none;
+            border-radius: 18px;
+            font-size: 17px;
+            font-weight: 700;
+            color: white;
+            cursor: pointer;
+            overflow: hidden;
+            transition: transform 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .mode-btn:active {
+            transform: scale(0.97);
+        }
+
+        .mode-btn-en {
+            background: linear-gradient(135deg, #6366f1, #a855f7);
+            box-shadow: 0 10px 30px rgba(99, 102, 241, 0.3);
+        }
+
+        .mode-btn-ru {
+            background: linear-gradient(135deg, #ec4899, #f43f5e);
+            box-shadow: 0 10px 30px rgba(236, 72, 153, 0.3);
+        }
+
+        .mode-btn-content {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .mode-btn-icon {
+            font-size: 28px;
+        }
+
+        .mode-btn-arrow {
+            font-size: 22px;
+            opacity: 0.8;
+            transition: transform 0.3s;
+        }
+
+        .mode-btn:active .mode-btn-arrow {
+            transform: translateX(5px);
+        }
+
+        /* Блик на кнопке */
+        .mode-btn::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.6s;
+        }
+
+        .mode-btn:hover::before {
+            left: 100%;
+        }
+
+        /* Вторичные кнопки */
+        .btn-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 16px;
+        }
+
+        .btn {
+            padding: 16px;
+            border: 1px solid var(--card-border);
+            background: var(--card);
+            backdrop-filter: blur(20px);
+            color: var(--text);
+            border-radius: 14px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn:active {
+            transform: scale(0.96);
+        }
+
+        .btn-full {
+            grid-column: 1 / -1;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            border: none;
+            box-shadow: 0 8px 20px rgba(168, 85, 247, 0.3);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #10b981, #059669);
+            border: none;
+            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
+        }
+
+        /* Форма добавления */
+        .form-title {
+            font-size: 22px;
+            font-weight: 800;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .input-group {
+            margin-bottom: 14px;
+        }
+
+        .input-label {
+            display: block;
+            font-size: 12px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+            font-weight: 600;
+        }
+
+        input {
+            width: 100%;
+            padding: 14px 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            color: var(--text);
+            font-size: 16px;
+            transition: all 0.2s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--accent);
+            background: rgba(168, 85, 247, 0.08);
+            box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.15);
+        }
+
+        input::placeholder {
+            color: rgba(255, 255, 255, 0.3);
+        }
+
+        /* Тренировка */
+        .training-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .progress-wrap {
+            flex: 1;
+            margin-right: 16px;
+        }
+
+        .progress-text {
+            font-size: 12px;
+            color: var(--text-dim);
+            margin-bottom: 6px;
+            font-weight: 600;
+        }
+
+        .progress-bar {
+            height: 6px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent), var(--accent-2));
+            border-radius: 3px;
+            transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: 0 0 10px var(--accent);
+        }
+
+        .streak {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-weight: 800;
+            font-size: 18px;
+            color: #fb923c;
+            text-shadow: 0 0 20px rgba(251, 146, 60, 0.5);
+            transition: transform 0.3s;
+        }
+
+        .streak.bump {
+            animation: bump 0.4s ease;
+        }
+
+        @keyframes bump {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.3); }
+        }
+
+        /* Карточка слова */
+        .word-card {
+            background: linear-gradient(135deg, rgba(168, 85, 247, 0.1), rgba(236, 72, 153, 0.1));
+            border: 1px solid rgba(168, 85, 247, 0.2);
+            border-radius: 24px;
+            padding: 40px 20px;
+            text-align: center;
+            margin: 20px 0;
+            position: relative;
+            overflow: hidden;
+            animation: cardAppear 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes cardAppear {
+            from { opacity: 0; transform: scale(0.9) rotateX(-15deg); }
+            to { opacity: 1; transform: scale(1) rotateX(0); }
+        }
+
+        .word-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at 50% 0%, rgba(168, 85, 247, 0.3), transparent 70%);
+            pointer-events: none;
+        }
+
+        .word-text {
+            font-size: 36px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            position: relative;
+            z-index: 1;
+            animation: wordFade 0.4s ease;
+        }
+
+        @keyframes wordFade {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .speak-btn {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            z-index: 2;
+        }
+
+        .speak-btn:active {
+            transform: scale(0.9);
+            background: var(--accent);
+        }
+
+        /* Результат */
+        .result {
+            text-align: center;
+            padding: 14px;
+            margin: 16px 0;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 15px;
+            display: none;
+            animation: resultPop 0.3s ease;
+        }
+
+        @keyframes resultPop {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .result.correct {
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: #34d399;
+            display: block;
+        }
+
+        .result.incorrect {
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #f87171;
+            display: block;
+        }
+
+        .result.shake {
+            animation: shake 0.4s ease;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-8px); }
+            75% { transform: translateX(8px); }
+        }
+
+        /* Список слов */
+        .word-list {
+            max-height: 400px;
+            overflow-y: auto;
+            margin: 16px 0;
+        }
+
+        .word-list::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .word-list::-webkit-scrollbar-thumb {
+            background: var(--accent);
+            border-radius: 2px;
+        }
+
+        .word-item {
+            padding: 14px;
+            margin-bottom: 8px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            animation: fadeInUp 0.3s ease;
+        }
+
+        .word-item-text {
+            flex: 1;
+            font-size: 15px;
+        }
+
+        .word-item-en {
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        .word-item-sep {
+            color: var(--text-dim);
+            margin: 0 8px;
+        }
+
+        .word-item-ru {
+            color: var(--text-dim);
+        }
+
+        .delete-btn {
+            background: rgba(239, 68, 68, 0.15);
+            color: #f87171;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .delete-btn:active {
+            transform: scale(0.9);
+            background: rgba(239, 68, 68, 0.3);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-dim);
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+            opacity: 0.5;
+        }
+
+        /* Конфетти */
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            pointer-events: none;
+            z-index: 1000;
+            animation: confettiFall 2s ease-out forwards;
+        }
+
+        @keyframes confettiFall {
+            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+
+        /* Уведомление о рекорде */
+        .toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-100px);
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            color: white;
+            padding: 14px 24px;
+            border-radius: 14px;
+            font-weight: 700;
+            box-shadow: 0 10px 40px rgba(168, 85, 247, 0.5);
+            z-index: 1000;
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-blobs">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <div class="logo">
+                <span class="logo-dot"></span>
+                <span>WORDS</span>
+            </div>
+        </div>
+
+        <!-- Главный экран -->
+        <div id="mainScreen" class="screen active">
+            <div class="stats-grid">
+                <div class="stat">
+                    <div class="stat-value" id="totalWords">0</div>
+                    <div class="stat-label">Слов</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" id="learnedToday">0</div>
+                    <div class="stat-label">Сегодня</div>
+                </div>
+                <div class="stat record">
+                    <div class="stat-value" id="maxStreak">0</div>
+                    <div class="stat-label">Рекорд 🔥</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="mode-buttons">
+                    <button class="mode-btn mode-btn-en" onclick="startTraining('en-ru')">
+                        <div class="mode-btn-content">
+                            <span class="mode-btn-icon">🇬🇧</span>
+                            <span>EN → RU</span>
+                        </div>
+                        <span class="mode-btn-arrow">→</span>
+                    </button>
+                    <button class="mode-btn mode-btn-ru" onclick="startTraining('ru-en')">
+                        <div class="mode-btn-content">
+                            <span class="mode-btn-icon">🇷🇺</span>
+                            <span>RU → EN</span>
+                        </div>
+                        <span class="mode-btn-arrow">→</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="btn-row">
+                <button class="btn" onclick="showScreen('addScreen')">➕ Добавить</button>
+                <button class="btn" onclick="showScreen('listScreen')">📋 Список</button>
+            </div>
+        </div>
+
+        <!-- Экран добавления -->
+        <div id="addScreen" class="screen">
+            <div class="card">
+                <div class="form-title">Новое слово</div>
+                
+                <div class="input-group">
+                    <label class="input-label">English</label>
+                    <input type="text" id="englishWord" placeholder="beautiful">
+                </div>
+                
+                <div class="input-group">
+                    <label class="input-label">Русский</label>
+                    <input type="text" id="russianWord" placeholder="красивый">
+                </div>
+                
+                <button class="btn btn-primary btn-full" onclick="addWord()">Сохранить</button>
+                <button class="btn btn-full" onclick="showScreen('mainScreen')" style="margin-top: 8px;">← Назад</button>
+            </div>
+        </div>
+
+        <!-- Экран тренировки -->
+        <div id="trainingScreen" class="screen">
+            <div class="card">
+                <div class="training-header">
+                    <div class="progress-wrap">
+                        <div class="progress-text"><span id="progressCurrent">0</span> / <span id="progressTotal">0</span></div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <div class="streak" id="streakDisplay">🔥 <span id="streakNumber">0</span></div>
+                </div>
+
+                <div class="word-card" id="wordCard">
+                    <button class="speak-btn" onclick="speakWord()">🔊</button>
+                    <div class="word-text" id="questionWord">word</div>
+                </div>
+                
+                <div class="input-group">
+                    <input type="text" id="answerInput" placeholder="Твой ответ..." autocomplete="off">
+                </div>
+                
+                <div class="result" id="result"></div>
+                
+                <button class="btn btn-success btn-full" onclick="checkAnswer()">Проверить</button>
+                <div class="btn-row">
+                    <button class="btn" onclick="nextWord()">Следующее →</button>
+                    <button class="btn" onclick="showScreen('mainScreen')">Выйти</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Список слов -->
+        <div id="listScreen" class="screen">
+            <div class="card">
+                <div class="form-title">Мои слова</div>
+                <div class="word-list" id="wordList"></div>
+                <button class="btn btn-full" onclick="showScreen('mainScreen')">← Назад</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast для рекорда -->
+    <div class="toast" id="toast">
+        <span>🎉</span>
+        <span id="toastText">Новый рекорд!</span>
+    </div>
+
+    <script>
+        // Данные
+        let words = JSON.parse(localStorage.getItem('words')) || [];
+        let currentWord = null;
+        let currentMode = 'en-ru';
+        let learnedToday = parseInt(localStorage.getItem('learnedToday')) || 0;
+        let lastDate = localStorage.getItem('lastDate') || '';
+        
+        let maxStreak = parseInt(localStorage.getItem('maxStreak')) || 0;
+        let currentStreak = 0;
+
+        let deck = [];
+        let deckIndex = 0;
+
+        // Сброс счётчика дня
+        const today = new Date().toDateString();
+        if (lastDate !== today) {
+            learnedToday = 0;
+            localStorage.setItem('learnedToday', '0');
+            localStorage.setItem('lastDate', today);
+        }
+
+        // Вибрация
+        function vibrate(pattern) {
+            if (navigator.vibrate) navigator.vibrate(pattern);
+        }
+
+        // Озвучка
+        function speak(text, lang = 'en-US') {
+            if (!window.speechSynthesis) return;
+            window.speechSynthesis.cancel();
+            const utter = new SpeechSynthesisUtterance(text);
+            utter.lang = lang;
+            utter.rate = 0.9;
+            window.speechSynthesis.speak(utter);
+        }
+
+        function speakWord() {
+            if (!currentWord) return;
+            if (currentMode === 'en-ru') {
+                speak(currentWord.english, 'en-US');
+            } else {
+                speak(currentWord.russian, 'ru-RU');
+            }
+        }
+
+        // Конфетти
+        function launchConfetti() {
+            const colors = ['#a855f7', '#ec4899', '#3b82f6', '#10b981', '#f59e0b'];
+            for (let i = 0; i < 40; i++) {
+                const c = document.createElement('div');
+                c.className = 'confetti';
+                c.style.left = Math.random() * 100 + 'vw';
+                c.style.top = '-20px';
+                c.style.background = colors[Math.floor(Math.random() * colors.length)];
+                c.style.animationDelay = Math.random() * 0.5 + 's';
+                c.style.animationDuration = (1.5 + Math.random()) + 's';
+                if (Math.random() > 0.5) c.style.borderRadius = '50%';
+                document.body.appendChild(c);
+                setTimeout(() => c.remove(), 3000);
+            }
+        }
+
+        // Toast
+        function showToast(text) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastText').textContent = text;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 2500);
+        }
+
+        // Статистика
+        function updateStats() {
+            document.getElementById('totalWords').textContent = words.length;
+            document.getElementById('learnedToday').textContent = learnedToday;
+            document.getElementById('maxStreak').textContent = maxStreak;
+        }
+
+        function updateCurrentStreak() {
+            const el = document.getElementById('streakDisplay');
+            document.getElementById('streakNumber').textContent = currentStreak;
+            el.classList.remove('bump');
+            void el.offsetWidth;
+            el.classList.add('bump');
+        }
+
+        // Навигация
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+            
+            if (screenId === 'listScreen') renderWordList();
+            if (screenId === 'mainScreen') updateStats();
+            if (screenId === 'addScreen') {
+                setTimeout(() => document.getElementById('englishWord').focus(), 300);
+            }
+        }
+
+        // Добавление слова
+        function addWord() {
+            const english = document.getElementById('englishWord').value.trim().toLowerCase();
+            const russian = document.getElementById('russianWord').value.trim().toLowerCase();
+            
+            if (!english || !russian) {
+                showToast('Заполни оба поля');
+                return;
+            }
+
+            if (words.find(w => w.english === english)) {
+                showToast('Слово уже есть');
+                return;
+            }
+
+            words.push({ english, russian, added: Date.now() });
+            localStorage.setItem('words', JSON.stringify(words));
+            
+            document.getElementById('englishWord').value = '';
+            document.getElementById('russianWord').value = '';
+            
+            vibrate(30);
+            showToast('✓ Добавлено');
+            showScreen('mainScreen');
+        }
+
+        // Перемешивание
+        function shuffle(array) {
+            const arr = [...array];
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        function newDeck() {
+            deck = shuffle(words);
+            deckIndex = 0;
+        }
+
+        function startTraining(mode) {
+            if (words.length === 0) {
+                showToast('Сначала добавь слова');
+                return;
+            }
+            currentMode = mode;
+            currentStreak = 0;
+            newDeck();
+            showScreen('trainingScreen');
+            updateCurrentStreak();
+            nextWord();
+        }
+
+        function nextWord() {
+            if (words.length === 0) return;
+            
+            if (deckIndex >= deck.length) newDeck();
+            
+            currentWord = deck[deckIndex];
+            deckIndex++;
+            
+            const wordText = document.getElementById('questionWord');
+            wordText.textContent = currentMode === 'en-ru' ? currentWord.english : currentWord.russian;
+            
+            // Перезапуск анимации карточки
+            const card = document.getElementById('wordCard');
+            card.style.animation = 'none';
+            void card.offsetWidth;
+            card.style.animation = 'cardAppear 0.5s cubic-bezier(0.16, 1, 0.3, 1)';
+            
+            document.getElementById('answerInput').value = '';
+            document.getElementById('result').className = 'result';
+            document.getElementById('progressCurrent').textContent = deckIndex;
+            document.getElementById('progressTotal').textContent = deck.length;
+            document.getElementById('progressFill').style.width = (deckIndex / deck.length * 100) + '%';
+            
+            setTimeout(() => document.getElementById('answerInput').focus(), 100);
+        }
+
+        function checkAnswer() {
+            const userAnswer = document.getElementById('answerInput').value.trim().toLowerCase();
+            if (!userAnswer) return;
+            
+            const correctAnswer = currentMode === 'en-ru' ? currentWord.russian : currentWord.english;
+            const resultDiv = document.getElementById('result');
+            
+            if (userAnswer === correctAnswer) {
+                resultDiv.className = 'result correct';
+                resultDiv.textContent = '✓ Отлично!';
+                
+                currentStreak++;
+                updateCurrentStreak();
+                vibrate(20);
+                
+                learnedToday++;
+                localStorage.setItem('learnedToday', learnedToday.toString());
+                
+                if (currentStreak > maxStreak) {
+                    maxStreak = currentStreak;
+                    localStorage.setItem('maxStreak', maxStreak.toString());
+                    updateStats();
+                    launchConfetti();
+                    showToast(`🔥 Новый рекорд: ${maxStreak}!`);
+                }
+            } else {
+                resultDiv.className = 'result incorrect shake';
+                resultDiv.textContent = `✗ Правильно: ${correctAnswer}`;
+                
+                currentStreak = 0;
+                updateCurrentStreak();
+                vibrate([50, 30, 50]);
+            }
+        }
+
+        // Список слов
+        function renderWordList() {
+            const listDiv = document.getElementById('wordList');
+            
+            if (words.length === 0) {
+                listDiv.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📝</div>
+                        <p>Пока пусто</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            listDiv.innerHTML = words.map((word, index) => `
+                <div class="word-item">
+                    <div class="word-item-text">
+                        <span class="word-item-en">${word.english}</span>
+                        <span class="word-item-sep">—</span>
+                        <span class="word-item-ru">${word.russian}</span>
+                    </div>
+                    <button class="delete-btn" onclick="deleteWord(${index})">×</button>
+                </div>
+            `).join('');
+        }
+
+        function deleteWord(index) {
+            words.splice(index, 1);
+            localStorage.setItem('words', JSON.stringify(words));
+            renderWordList();
+            updateStats();
+            vibrate(30);
+        }
+
+        // Enter для проверки
+        document.getElementById('answerInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') checkAnswer();
+        });
+
+        updateStats();
+    </script>
+</body>
+</html>
